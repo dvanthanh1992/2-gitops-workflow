@@ -1,0 +1,16 @@
+---
+
+replicaCount: 3
+
+env:
+  STAGE_ENVIRONMENT: "HNI-PRODUCTION"
+  APP_NAME: "FRONTEND APPLICATION"
+  
+image:
+  repository: 192.168.145.182/kargo/frontend-app
+  pullPolicy: IfNotPresent
+  tag: 1.0.0
+
+service:
+  type: LoadBalancer
+  port: 80

@@ -1,0 +1,20 @@
+/* Input from Github Action Workflow & file local.env
+vsphere_endpoint                = "..."
+vsphere_username                = "..."
+vsphere_password                = "..."
+vsphere_datacenter              = "..."
+vsphere_cluster                 = "..."
+vsphere_datastore               = "..."
+vsphere_folder                  = "..."
+vsphere_resource_pool           = "..."
+vsphere_network                 = "..."
+vsphere_vm_template_name        = "..."
+*/
+
+iij_name_prefix                 = "thanh-microk8s"
+number_vms                      = "2"
+base_vm_ip_cidr                 = "192.168.145.101/24"
+vm_gateway                      = "192.168.145.1"
+vm_dns                          = "8.8.8.8"
+vm_cpu_cores                    = "8"
+vm_mem_size                     = "16384"
