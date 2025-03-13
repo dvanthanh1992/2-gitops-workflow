@@ -1,0 +1,79 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: harbor
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hashicorp-vault
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-server-tls
+  namespace: argocd
+spec:
+  secretName: argocd-server-tls
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+  dnsNames:
+    - ${ARGO_ADDR}
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kargo-api-cert
+  namespace: kargo
+spec:
+  secretName: kargo-api-cert
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+  dnsNames:
+    - ${KARGO_ADDR}
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${K8S_TLS_SECRET_NAME}
+  namespace: harbor
+spec:
+  secretName: ${K8S_TLS_SECRET_NAME}
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+  dnsNames:
+    - ${HARBOR_ADDR}
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${K8S_TLS_SECRET_NAME}
+  namespace: hashicorp-vault
+spec:
+  secretName: ${K8S_TLS_SECRET_NAME}
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+  dnsNames:
+    - ${VAULT_ADDR}
