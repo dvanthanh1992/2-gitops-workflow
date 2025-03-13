@@ -8,7 +8,7 @@ expose:
   type: loadBalancer
   loadBalancer:
     IP: {{ env "HARBOR_IP" }}
-externalURL: https://{{ env "HARBOR_ADDR" }}
+externalURL: {{ env "HARBOR_ADDR" }}
 harborAdminPassword: {{ env "HARBOR_ADMIN_PASSWORD" }}
 persistence:
   persistentVolumeClaim:

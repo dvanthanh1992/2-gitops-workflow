@@ -25,6 +25,11 @@ releases:
     version: "0.29.1"
     values:
       - values/hashicorp-vault.yaml.gotmpl
+    hooks:
+      - events: ["postsync"]
+        showlogs: true
+        command: "/bin/sh"
+        args: ["-c", "hook/vault-init.sh"]
 
   - name: external-secrets
     namespace: external-secrets
@@ -43,6 +48,19 @@ releases:
       - values/harbor.yaml.gotmpl
     needs:
       - external-secrets/external-secrets
+    hooks:
+      - events: ["postsync"]
+        showlogs: true
+        command: "/bin/sh"
+        args: 
+          - "-c"
+          - |
+            kubectl wait \
+              --for=condition=Ready \
+              --timeout=600s \
+              -n harbor \
+              pod -l component=core && \
+            hook/private-harbor.sh
 
   - name: argocd
     namespace: argocd
@@ -77,13 +95,18 @@ releases:
     needs:
       - argo-rollouts/argo-rollouts
 
-  - name: tekton-pipelines
-    namespace: tekton-pipelines
-    createNamespace: true
-    chart: cdf/tekton-pipeline
-    # APP VERSION v0.42.0
-    version: "1.0.2"
-    values:
-      - values/tekton-pipelines.yaml.gotmpl
-    needs:
-      - kargo/kargo
+  # - name: tekton-pipelines
+  #   namespace: tekton-pipelines
+  #   createNamespace: true
+  #   chart: cdf/tekton-pipeline
+  #   # APP VERSION v0.42.0
+  #   version: "1.0.2"
+  #   values:
+  #     - values/tekton-pipelines.yaml.gotmpl
+  #   needs:
+  #     - kargo/kargo
+  #   hooks:
+  #     - events: ["postsync"]
+  #       showlogs: true
+  #       command: "/bin/sh"
+  #       args: ["-c" , "hook/private-harbor.sh"]
