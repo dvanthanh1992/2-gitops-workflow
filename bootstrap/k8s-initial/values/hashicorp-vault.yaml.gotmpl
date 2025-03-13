@@ -1,0 +1,32 @@
+---
+global:
+  enabled: true
+  tlsDisable: false
+
+ui:
+  enabled: true
+  serviceType: LoadBalancer
+  externalTrafficPolicy: Local
+  loadBalancerIP: {{ env "VAULT_IP" }}
+
+server:
+  extraVolumes:
+    - type: secret
+      name: {{ env "K8S_TLS_SECRET_NAME" }}
+      path: /vault/userconfig
+  standalone:
+    enabled: true
+    config: |
+      ui = true
+      disable_mlock = true
+      listener "tcp" {
+        tls_disable   = 0
+        tls_cert_file = "/vault/userconfig/{{ env "K8S_TLS_SECRET_NAME" }}/tls.crt"
+        tls_key_file  = "/vault/userconfig/{{ env "K8S_TLS_SECRET_NAME" }}/tls.key"
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+
+      storage "file" {
+        path = "/vault/data"
+      }

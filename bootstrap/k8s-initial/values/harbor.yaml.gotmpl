@@ -1,0 +1,16 @@
+---
+expose:
+  tls:
+    enabled: true
+    certSource: secret
+    secret:
+      secretName: {{ env "K8S_TLS_SECRET_NAME" }}
+  type: loadBalancer
+  loadBalancer:
+    IP: {{ env "HARBOR_IP" }}
+externalURL: https://{{ env "HARBOR_ADDR" }}
+harborAdminPassword: {{ env "HARBOR_ADMIN_PASSWORD" }}
+persistence:
+  persistentVolumeClaim:
+    registry:
+      size: {{ env "HARBOR_REGISTRY_SIZE_GB" }}Gi

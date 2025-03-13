@@ -1,0 +1,20 @@
+---
+global:
+  domain: {{ env "ARGO_ADDR" }}
+
+configs:
+    secret:
+        argocdServerAdminPassword: "{{ env "ARGO_ADMIN_PASSWORD_HASH" }}"
+dex:
+    enabled: false
+notifications:
+    enabled: false
+server:
+    service:
+        type: LoadBalancer
+        loadBalancerIP: {{ env "ARGO_IP" }}
+    extensions:
+        enabled: true
+        contents:
+            - name: argo-rollouts
+              url: https://github.com/argoproj-labs/rollout-extension/releases/download/v0.3.3/extension.tar
