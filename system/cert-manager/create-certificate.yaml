@@ -34,7 +34,7 @@ spec:
     name: letsencrypt-dns
     kind: ClusterIssuer
   dnsNames:
-    - ${ARGO_ADDR}
+    - ${ARGO_DNS}
 
 ---
 apiVersion: cert-manager.io/v1
@@ -48,7 +48,7 @@ spec:
     name: letsencrypt-dns
     kind: ClusterIssuer
   dnsNames:
-    - ${KARGO_ADDR}
+    - ${KARGO_DNS}
 
 ---
 apiVersion: cert-manager.io/v1
@@ -62,7 +62,7 @@ spec:
     name: letsencrypt-dns
     kind: ClusterIssuer
   dnsNames:
-    - ${HARBOR_ADDR}
+    - ${HARBOR_DNS}
 
 ---
 apiVersion: cert-manager.io/v1
@@ -76,4 +76,4 @@ spec:
     name: letsencrypt-dns
     kind: ClusterIssuer
   dnsNames:
-    - ${VAULT_ADDR}
+    - ${VAULT_DNS}
