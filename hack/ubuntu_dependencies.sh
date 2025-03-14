@@ -14,7 +14,7 @@ sudo apt-get update -y
 echo "🔹 Installing required packages..."
 sudo apt-get install -y curl wget unzip tar python3 python3-pip python3-apt \
     apt-transport-https ca-certificates software-properties-common \
-    git direnv sshpass vim rsync openssh-client jq xorriso
+    git direnv sshpass vim rsync openssh-client jq yq xorriso
 
 echo "🔹 Adding Docker repository..."
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
