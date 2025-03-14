@@ -13,7 +13,7 @@ RUN apt-get update && \
     apt-get install -y docker-ce && \
     apt-get clean all
 
-COPY requirements.apt .
+COPY requirements/requirements.apt .
 RUN apt-get update && \
     sed 's/#.*//' requirements.apt | xargs apt-get install -y && \
     apt-get clean all
