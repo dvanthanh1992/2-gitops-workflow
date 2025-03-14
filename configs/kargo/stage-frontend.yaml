@@ -1,0 +1,86 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: dev-cluster-01-frontend
+  namespace: "${K8S_PROJECT_NAME}"
+  annotations:
+    kargo.akuity.io/color: red
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: "${K8S_PROJECT_NAME}-frontend"
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - task:
+          name: promote-frontend
+
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: staging-cluster-01-frontend
+  namespace: "${K8S_PROJECT_NAME}"
+  annotations:
+    kargo.akuity.io/color: amber
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: "${K8S_PROJECT_NAME}-frontend"
+    sources:
+      stages:
+      - dev-cluster-01-frontend
+  promotionTemplate:
+    spec:
+      steps:
+      - task:
+          name: promote-frontend
+
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod-hcm-cluster-02-frontend
+  namespace: "${K8S_PROJECT_NAME}"
+  annotations:
+    kargo.akuity.io/color: yellow
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: "${K8S_PROJECT_NAME}-frontend"
+    sources:
+      stages:
+      - staging-cluster-01-frontend
+  promotionTemplate:
+    spec:
+      steps:
+      - task:
+          name: promote-frontend
+
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod-hni-cluster-02-frontend
+  namespace: "${K8S_PROJECT_NAME}"
+  annotations:
+    kargo.akuity.io/color: green
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: "${K8S_PROJECT_NAME}-frontend"
+    sources:
+      stages:
+      - staging-cluster-01-frontend
+  promotionTemplate:
+    spec:
+      steps:
+      - task:
+          name: promote-frontend

@@ -1,0 +1,90 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: "${K8S_PROJECT_NAME}"
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  promotionPolicies:
+  - stage: dev-cluster-01-backend
+    autoPromotionEnabled: true
+  promotionPolicies:
+  - stage: dev-cluster-01-frontend
+    autoPromotionEnabled: true
+
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: dev-creds
+  namespace: "${K8S_PROJECT_NAME}"
+  labels:
+    kargo.akuity.io/cred-type: git
+stringData:
+  repoURL: "${GH_DEV_URL}"
+  username: "${GH_USER}"
+  password: "${GH_TOKEN}"
+
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: ops-creds
+  namespace: "${K8S_PROJECT_NAME}"
+  labels:
+    kargo.akuity.io/cred-type: git
+stringData:
+  repoURL: "${GH_OPS_URL}"
+  username: "${GH_USER}"
+  password: "${GH_TOKEN}"
+
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: chart-creds
+  namespace: "${K8S_PROJECT_NAME}"
+  labels:
+    kargo.akuity.io/cred-type: git
+stringData:
+  repoURL: "${GH_CHART_URL}"
+  username: "${GH_USER}"
+  password: "${GH_TOKEN}"
+
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: "${K8S_PROJECT_NAME}-backend"
+  namespace: "${K8S_PROJECT_NAME}"
+  annotations:
+    kargo.akuity.io/color: cyan
+spec:
+  subscriptions:
+    - image:
+        repoURL: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/backend-app"
+        imageSelectionStrategy: SemVer
+        semverConstraint: "*.*.0"
+        discoveryLimit: 10
+        strictSemvers: true
+
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: "${K8S_PROJECT_NAME}-frontend"
+  namespace: "${K8S_PROJECT_NAME}"
+  annotations:
+    kargo.akuity.io/color: sky
+spec:
+  subscriptions:       
+    - image:
+        repoURL: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/frontend-app"
+        imageSelectionStrategy: SemVer
+        semverConstraint: "*.*.0"
+        discoveryLimit: 10
+        strictSemvers: true

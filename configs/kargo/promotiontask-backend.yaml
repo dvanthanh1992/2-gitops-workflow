@@ -1,0 +1,119 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionTask
+metadata:
+  name: promote-backend
+  namespace: "${K8S_PROJECT_NAME}"
+spec:
+  vars:
+  - name: chartURL
+    value: "${GH_CHART_URL}"
+
+  - name: opsFolder
+    value: ./ops-repo
+
+  - name: chartFolder
+    value: ./chart-repo
+
+  - name: sourceImage
+    value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/backend-app"
+
+  - name: sourceBranch
+    value: main
+
+  - name: targetBranch
+
+  # - name: STAGE_PATH
+  #   value: >-
+  #     ${{ 
+  #       ctx.stage == "dev-be"       ? "cluster/cluster-01/dev" : 
+  #       ctx.stage == "staging-be"   ? "cluster/cluster-01/staging" : 
+  #       ctx.stage == "prod-hcm-be"  ? "cluster/cluster-02/prod-hcm" : 
+  #       ctx.stage == "prod-hni-be"  ? "cluster/cluster-02/prod-hni" : 
+  #       "unknown-stage" 
+  #     }}
+
+  # - name: CHART_VALUES_PATH
+  #   value: >-
+  #     ${{ 
+  #       ctx.stage == "dev-be"       ? "values-dev.yml" : 
+  #       ctx.stage == "staging-be"   ? "values-staging.yml" : 
+  #       ctx.stage == "prod-hcm-be"  ? "values-prod-hcm.yml" : 
+  #       ctx.stage == "prod-hni-be"  ? "values-prod-hni.yml" :
+  #       "unknown-stage" 
+  #     }}
+
+  steps:
+  # - uses: git-clone
+  #   config:
+  #     repoURL: "${GH_DEV_URL}"
+  #     checkout:
+  #     - branch: main
+  #       path: ${{ vars.opsFolder }}
+
+  - uses: git-clone
+    as: clone-ops-repo
+    config:
+      repoURL: ${{ vars.opsURL }}
+      checkout:
+      - branch: ${{ vars.sourceBranch }}
+        path: ${{ vars.opsFolder }}
+      - branch: stage/${{ vars.targetBranch }}
+        create: true
+        path: ./dst
+
+
+  - uses: yaml-update
+    as: update-values-git
+    config:
+      path: ${{ vars.opsFolder }}/${{ vars.STAGE_PATH }}/values-backend.yml
+      updates:
+      - key: image.repository
+        value: "${PRIVATE_REGISTRY_BE}"
+      - key: image.tag
+        value: ${{ imageFrom("${PRIVATE_REGISTRY_BE}").Tag }}
+      - key: image.pullPolicy
+        value: IfNotPresent
+
+
+  # Commit and push changes to the Gitops repository
+  - uses: git-commit
+    as: commit-git-repo
+    config:
+      path: ${{ vars.opsFolder }}
+      message: "Update Helm values for ${{ ctx.stage }}"
+
+  - uses: git-push
+    as: push-git-repo
+    config:
+      path: ${{ vars.opsFolder }}
+      targetBranch: main
+
+  # Commit and push changes to the Helm chart repository
+  - uses: git-commit
+    as: commit-chart-repo
+    config:
+      path: ${{ vars.chartFolder }}
+      message: "Sync Helm values with backend application repository"
+
+  - uses: git-push
+    as: push-chart-repo
+    config:
+      path: ${{ vars.chartFolder }}
+      targetBranch: main
+
+  - uses: argocd-update
+    as: update-chart-repo
+    config:
+      apps:
+      - name: "${K8S_PROJECT_NAME}-${{ ctx.stage }}"
+        sources:
+        - repoURL: "${GH_CHART_URL}"
+
+  - uses: argocd-update
+    as: update-git-repo
+    config:
+      apps:
+      - name: "${K8S_PROJECT_NAME}-${{ ctx.stage }}"
+        sources:
+        - repoURL: "${GH_DEV_URL}"

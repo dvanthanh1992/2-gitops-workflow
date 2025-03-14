@@ -1,0 +1,83 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  name: "${K8S_PROJECT_NAME}-application-set"
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          # DEV environment
+          - name: dev
+            cluster: cluster-01
+            appType: backend
+            server: "${K8S_CLUSTER_MGMT}"
+
+          - name: dev
+            cluster: cluster-01
+            appType: frontend
+            server: "${K8S_CLUSTER_MGMT}"
+
+          # STAGING environment
+          - name: staging
+            cluster: cluster-01
+            appType: backend
+            server: "${K8S_CLUSTER_MGMT}"
+
+          - name: staging
+            cluster: cluster-01
+            appType: frontend
+            server: "${K8S_CLUSTER_MGMT}"
+
+          # PROD HCM environments
+          - name: prod-hcm
+            cluster: cluster-02
+            appType: backend
+            server: "${K8S_CLUSTER_RS}"
+
+          - name: prod-hcm
+            cluster: cluster-02
+            appType: frontend
+            server: "${K8S_CLUSTER_RS}"
+
+          # PROD HNI environments
+          - name: prod-hni
+            cluster: cluster-02
+            appType: backend
+            server: "${K8S_CLUSTER_RS}"
+
+          - name: prod-hni
+            cluster: cluster-02
+            appType: frontend
+            server: "${K8S_CLUSTER_RS}"
+ 
+  template:
+    metadata:
+      name: "{{.name}}-{{.cluster}}-{{.appType}}"
+      annotations:
+        kargo.akuity.io/authorized-stage: "${K8S_PROJECT_NAME}:{{.name}}-{{.cluster}}-{{.appType}}"
+    spec:
+      project: "${K8S_PROJECT_NAME}"
+      sources:
+      - repoURL: "${GH_CHART_URL}"
+        targetRevision: main
+        path: >
+          {{- if eq .appType "frontend" -}}
+          thanh-frontend-chart
+          {{- else if eq .appType "backend" -}}
+          thanh-backend-chart
+          {{- end -}}
+        helm:
+          valueFiles:
+            - "{{.name}}/values.yml"
+      destination:
+        server: "{{.server}}"
+        namespace: "${K8S_PROJECT_NAME}-{{.name}}-{{.appType}}"
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
