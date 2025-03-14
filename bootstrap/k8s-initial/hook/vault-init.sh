@@ -26,10 +26,10 @@ vault_init() {
         echo "✅ Vault is already initialized. Skipping initialization."
     else
         echo "🔑 Initializing Vault..."
-        vault operator init -key-shares=1 -key-threshold=1 | tee ../../$VAULT_TOKEN_FILE
+        vault operator init -key-shares=1 -key-threshold=1 | tee ../../../$VAULT_TOKEN_FILE
         
-        export UNSEAL_KEY=$(grep "Unseal Key 1:" ../../$VAULT_TOKEN_FILE | awk '{print $4}')
-        export VAULT_ROOT_TOKEN=$(grep "Initial Root Token:" ../../$VAULT_TOKEN_FILE | awk '{print $4}')
+        export UNSEAL_KEY=$(grep "Unseal Key 1:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
+        export VAULT_ROOT_TOKEN=$(grep "Initial Root Token:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
         export VAULT_ROOT_TOKEN_BASE_64=$(echo -n "$VAULT_ROOT_TOKEN" | base64)
 
         echo "🔓 Unsealing Vault..."
@@ -40,9 +40,9 @@ vault_init() {
 }
 
 put_to_vault() {
-    if [[ -f ../../$VAULT_TOKEN_FILE ]]; then
+    if [[ -f ../../../$VAULT_TOKEN_FILE ]]; then
         echo "🔍 Found $VAULT_TOKEN_FILE file. Extracting root token..."
-        export VAULT_ROOT_TOKEN=$(grep "Initial Root Token:" ../../$VAULT_TOKEN_FILE | awk '{print $4}')
+        export VAULT_ROOT_TOKEN=$(grep "Initial Root Token:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
         export VAULT_ROOT_TOKEN_BASE_64=$(echo -n "$VAULT_ROOT_TOKEN" | base64)
     else
         echo "⚠️ $VAULT_TOKEN_FILE file not found. Using existing VAULT_ROOT_TOKEN variable."
