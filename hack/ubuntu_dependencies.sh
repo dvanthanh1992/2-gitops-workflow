@@ -49,9 +49,9 @@ rm -rf /tmp/awscliv2.zip /tmp/aws
 
 # Install kubectl
 echo "🔹 Installing kubectl..."
-KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
-curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl
-sudo chmod +x /usr/local/bin/kubectl
+KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt) && \
+    curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
+    -o /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl
 
 # Install Helm
 echo "🔹 Installing Helm..."
@@ -59,14 +59,14 @@ curl "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3" | bas
 
 # Install Helmfile
 echo "🔹 Installing Helmfile $HELMFILE_VERSION..."
-curl -fsSL "https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile_${HELMFILE_VERSION}_linux_amd64.tar.gz" -o "/tmp/helmfile.tar.gz"
-tar -xzf /tmp/helmfile.tar.gz -C /tmp
-sudo mv /tmp/helmfile /usr/local/bin/
-sudo chmod +x /usr/local/bin/helmfile
+curl -fsSL "https://github.com/helmfile/helmfile/releases/download/v0.171.0/helmfile_0.171.0_linux_amd64.tar.gz" \
+    -o /tmp/helmfile.tar.gz && \
+    tar -xzf /tmp/helmfile.tar.gz -C /tmp && \
+    mv /tmp/helmfile /usr/local/bin/ && chmod +x /usr/local/bin/helmfile
 
 # Install ArgoCD CLI
 echo "🔹 Installing ArgoCD CLI..."
-curl -fsSL "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64" -o /usr/local/bin/argocd
-sudo chmod +x /usr/local/bin/argocd
+curl -fsSL "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64" \
+    -o /usr/local/bin/argocd && chmod +x /usr/local/bin/argocd
 
 echo "✅ All dependencies installed successfully!"
