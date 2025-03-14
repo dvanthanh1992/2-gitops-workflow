@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERRAFORM_LATEST_VERSION=1.11.2
@@ -8,7 +8,7 @@ ENV VAULT_LATEST_VERSION=1.19.0
 RUN apt-get update && \
     apt-get install -y curl apt-transport-https ca-certificates software-properties-common unzip python3-pip && \
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu noble stable" && \
+    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable" && \
     apt-get update && \
     apt-get install -y docker-ce && \
     apt-get clean all
