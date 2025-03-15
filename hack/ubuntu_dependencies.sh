@@ -69,4 +69,11 @@ echo "🔹 Installing ArgoCD CLI..."
 curl -fsSL "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64" \
     -o /usr/local/bin/argocd && chmod +x /usr/local/bin/argocd
 
+# Install Tekton CLI
+apt update;sudo apt install -y gnupg
+mkdir -p /etc/apt/keyrings/
+gpg --no-default-keyring --keyring /etc/apt/keyrings/tektoncd.gpg --keyserver keyserver.ubuntu.com --recv-keys 3EFE0E0A2F2F60AA
+"deb [signed-by=/etc/apt/keyrings/tektoncd.gpg] http://ppa.launchpad.net/tektoncd/cli/ubuntu eoan main"|sudo tee /etc/apt/sources.list.d/tektoncd-ubuntu-cli.list
+apt update && sudo apt install -y tektoncd-cli
+
 echo "✅ All dependencies installed successfully!"

@@ -14,7 +14,7 @@ repositories:
   - name: argo
     url: https://argoproj.github.io/argo-helm
 
-  - name: cdf
+  - name: tekton
     url: https://cdfoundation.github.io/tekton-helm-chart/
 
 releases:
@@ -94,19 +94,3 @@ releases:
       - values/kargo.yaml.gotmpl
     needs:
       - argo-rollouts/argo-rollouts
-
-  # - name: tekton-pipelines
-  #   namespace: tekton-pipelines
-  #   createNamespace: true
-  #   chart: cdf/tekton-pipeline
-  #   # APP VERSION v0.42.0
-  #   version: "1.0.2"
-  #   values:
-  #     - values/tekton-pipelines.yaml.gotmpl
-  #   needs:
-  #     - kargo/kargo
-  #   hooks:
-  #     - events: ["postsync"]
-  #       showlogs: true
-  #       command: "/bin/sh"
-  #       args: ["-c" , "hook/private-harbor.sh"]

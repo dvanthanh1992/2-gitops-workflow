@@ -32,13 +32,27 @@ helm_manage(){
     helmfile "$1" -f k8s-initial/helmfile.yaml
 }
 
-# Check if at least one argument is provided
+tekton_manage(){
+    if [ "$1" = "delete" ]; then
+        echo "🚀 Running kubectl delete for Tekton resources"
+        kubectl delete -f ../system/tekton/tekton-pipelines.yaml
+        kubectl delete -f ../system/tekton/tekton-dashboard.yaml
+        kubectl delete -f ../system/tekton/tekton-triggers.yaml
+        kubectl delete -f ../system/tekton/tekton-interceptors.yaml
+    else
+        echo "🚀 Running kubectl apply for Tekton resources"
+        kubectl apply -f ../system/tekton/tekton-pipelines.yaml
+        kubectl apply -f ../system/tekton/tekton-dashboard.yaml
+        kubectl apply -f ../system/tekton/tekton-triggers.yaml
+        kubectl apply -f ../system/tekton/tekton-interceptors.yaml
+    fi
+}
+
 if [ "$#" -eq 0 ]; then
     echo "❌ No argument provided. Use 'apply', 'sync', or 'delete'."
     exit 1
 fi
 
-# Validate argument value
 if [ "$1" != "apply" ] && [ "$1" != "sync" ] && [ "$1" != "delete" ]; then
     echo "❌ Invalid argument. Use 'apply', 'sync', or 'delete'."
     exit 1
@@ -47,3 +61,4 @@ fi
 load_env
 check_aws_dns
 helm_manage "$1"
+tekton_manage "$1"
