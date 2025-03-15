@@ -14,9 +14,6 @@ repositories:
   - name: argo
     url: https://argoproj.github.io/argo-helm
 
-  - name: tekton
-    url: https://cdfoundation.github.io/tekton-helm-chart/
-
 releases:
   - name: hashicorp-vault
     namespace: hashicorp-vault
@@ -56,10 +53,10 @@ releases:
           - "-c"
           - |
             kubectl wait \
+              -n harbor \
               --for=condition=Ready \
               --timeout=600s \
-              -n harbor \
-              pod -l component=core && \
+              --all pods && \
             hook/private-harbor.sh
 
   - name: argocd

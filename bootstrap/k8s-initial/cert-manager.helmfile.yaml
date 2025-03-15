@@ -19,8 +19,8 @@ releases:
           - "-c"
           - |
             kubectl wait \
+              -n cert-manager \
               --for=condition=Ready \
               --timeout=600s \
-              -n cert-manager \
-              pod -l app=cert-manager && \
+              --all pods && \
             hook/cert-manager.sh
