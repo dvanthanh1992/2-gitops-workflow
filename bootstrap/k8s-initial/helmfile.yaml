@@ -2,9 +2,6 @@ helmfiles:
   - path: cert-manager.helmfile.yaml
 
 repositories:
-  - name: external-secrets
-    url: https://charts.external-secrets.io
-
   - name: hashicorp
     url: https://helm.releases.hashicorp.com
 
@@ -28,14 +25,6 @@ releases:
         command: "/bin/sh"
         args: ["-c", "hook/vault-init.sh"]
 
-  - name: external-secrets
-    namespace: external-secrets
-    createNamespace: true
-    chart: external-secrets/external-secrets
-    version: "0.14.3"
-    needs:
-      - hashicorp-vault/hashicorp-vault
-
   - name: harbor
     namespace: harbor
     createNamespace: true
@@ -44,20 +33,7 @@ releases:
     values:
       - values/harbor.yaml.gotmpl
     needs:
-      - external-secrets/external-secrets
-    hooks:
-      - events: ["postsync"]
-        showlogs: true
-        command: "/bin/sh"
-        args: 
-          - "-c"
-          - |
-            kubectl wait \
-              -n harbor \
-              --for=condition=Ready \
-              --timeout=600s \
-              --all pods && \
-            hook/private-harbor.sh
+      - hashicorp-vault/hashicorp-vault
 
   - name: argocd
     namespace: argocd

@@ -64,3 +64,5 @@ put_to_vault() {
 wait_for_vault
 vault_init
 put_to_vault
+echo "🔹 Applying Vault Cluster Secret Store..."
+envsubst < ../../system/external-secrets/cluster-secret-store.yaml | kubectl apply -n external-secrets -f -
