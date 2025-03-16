@@ -19,21 +19,33 @@ wait_for_vault() {
         fi
     done
 }
+
 vault_init() {
     echo "🔄 Checking Vault status..."
-
     if [[ "$(vault status | grep 'Initialized' | awk '{print $2}')" == "true" ]]; then
         echo "✅ Vault is already initialized. Skipping initialization."
+        if [[ -f ../../../$VAULT_TOKEN_FILE ]]; then
+
+            export VAULT_UNSEAL_KEY=$(grep "Unseal Key 1:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
+            export VAULT_ROOT_TOKEN=$(grep "Initial Root Token:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
+
+            export VAULT_UNSEAL_KEY_BASE_64=$(echo -n "$VAULT_UNSEAL_KEY" | base64)
+            export VAULT_ROOT_TOKEN_BASE_64=$(echo -n "$VAULT_ROOT_TOKEN" | base64)
+        else
+            echo "⚠️ Token file not found. Please ensure VAULT_TOKEN_FILE exists."
+        fi
     else
         echo "🔑 Initializing Vault..."
         vault operator init -key-shares=1 -key-threshold=1 | tee ../../../$VAULT_TOKEN_FILE
         
-        export UNSEAL_KEY=$(grep "Unseal Key 1:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
+        export VAULT_UNSEAL_KEY=$(grep "Unseal Key 1:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
         export VAULT_ROOT_TOKEN=$(grep "Initial Root Token:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
+        
+        export VAULT_UNSEAL_KEY_BASE_64=$(echo -n "$VAULT_UNSEAL_KEY" | base64)
         export VAULT_ROOT_TOKEN_BASE_64=$(echo -n "$VAULT_ROOT_TOKEN" | base64)
 
         echo "🔓 Unsealing Vault..."
-        vault operator unseal "$UNSEAL_KEY"
+        vault operator unseal "$VAULT_UNSEAL_KEY"
         echo "🔐 Logging in to Vault..."
         vault login "$VAULT_ROOT_TOKEN"
     fi
@@ -42,8 +54,6 @@ vault_init() {
 put_to_vault() {
     if [[ -f ../../../$VAULT_TOKEN_FILE ]]; then
         echo "🔍 Found $VAULT_TOKEN_FILE file. Extracting root token..."
-        export VAULT_ROOT_TOKEN=$(grep "Initial Root Token:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
-        export VAULT_ROOT_TOKEN_BASE_64=$(echo -n "$VAULT_ROOT_TOKEN" | base64)
     else
         echo "⚠️ $VAULT_TOKEN_FILE file not found. Using existing VAULT_ROOT_TOKEN variable."
     fi
@@ -55,14 +65,38 @@ put_to_vault() {
         vault secrets enable -path="$VAULT_KV" kv-v2
     fi
 
-    vault kv put "$VAULT_KV/$VAULT_KV_PATH" \
-        $(awk -F= '!/^#/ && NF {printf "%s=%s ", $1, $2}' ../../../local.env)
+    echo "📄 Reading variables from local.env..."
+    local_env_vars=$(awk -F= '!/^#/ && NF {printf "%s=%s ", $1, $2}' ../../../local.env)
 
-    echo "✅ Environment variables have been saved to Vault at '$VAULT_KV/$VAULT_KV_PATH'."
+    echo "🔧 Generating raw Docker config JSON..."
+    HARBOR_CONFIG_JSON=$(cat <<EOF
+{
+  "auths": {
+    "$HARBOR_DNS": {
+      "username": "admin",
+      "password": "$HARBOR_ADMIN_PASSWORD",
+      "auth": "$(echo -n "admin:$HARBOR_ADMIN_PASSWORD" | base64)"
+    }
+  }
+}
+EOF
+)
+    echo "⬆️ Storing environment variables and raw Harbor config in Vault..."
+    vault kv put "$VAULT_KV/$VAULT_KV_PATH" $local_env_vars \
+        HARBOR_CONFIG_JSON="$HARBOR_CONFIG_JSON" \
+        VAULT_ROOT_TOKEN_BASE_64="$VAULT_ROOT_TOKEN_BASE_64" \
+        VAULT_UNSEAL_KEY_BASE_64="$VAULT_UNSEAL_KEY_BASE_64"
+
+    echo "✅ Environment variables and raw Harbor config have been saved to Vault at '$VAULT_KV/$VAULT_KV_PATH'."
+}
+
+apply_k8s_hashicorp-vault() {
+    echo "🔄 Applying K8s Vault Secret..."
+    envsubst < ../../system/hashicorp-vault/vault-secret-store.yaml | kubectl apply -f -
+    echo "✅ Applying K8s Vault Secret..."
 }
 
 wait_for_vault
 vault_init
 put_to_vault
-echo "🔹 Applying Vault Cluster Secret Store..."
-envsubst < ../../system/external-secrets/cluster-secret-store.yaml | kubectl apply -n external-secrets -f -
+apply_k8s_hashicorp-vault
