@@ -1,0 +1,27 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: extract-version
+spec:
+  description: Task to extract version from the main file
+  params:
+  - name: contextPath
+    type: string
+    description: The relative directory path containing main.py.
+  workspaces:
+  - name: source 
+  results:
+  - name: APP_VERSION
+  steps:
+    - name: extract-version
+      image: alpine:latest
+      script: |
+        #!/bin/sh
+        # Change directory to the specified context path
+        cd $(workspaces.source.path)/$(params.contextPath)
+        # Use sed to extract version from main.py based on the line: image_version = "1.0.0"
+        APP_VERSION=$(sed -n 's/.*image_version = "\([^"]*\)".*/\1/p' main.py)
+        echo "Extracted version: $APP_VERSION"
+        # Write the extracted version to the Tekton result file
+        echo -n "$APP_VERSION" > $(results.APP_VERSION.path)

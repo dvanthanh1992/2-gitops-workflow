@@ -1,0 +1,110 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: clone-build-push-kaniko
+spec:
+  description: |
+    This pipeline clones a git repository and builds & pushes a container image using kaniko.
+  params:
+  - name: repo-url
+    type: string
+    description: The git repository URL to clone from.
+
+  - name: imageUrl
+    type: string
+    description: Name (reference) of the image to build.
+
+  - name: pathToDockerfile
+    type: string
+    description: Path to the Dockerfile to build.
+
+  - name: pathToContext
+    type: string
+    description: The build context path.
+
+  - name: botTokenSecret
+    type: string
+    description: The name of the secret that has the bot token.
+
+  - name: chatIdTelegram
+    type: string
+    description: ID of the chat to send the message towards
+
+  workspaces:
+  - name: shared-data
+  - name: docker-credentials
+
+  tasks:
+  # Task fetch-source
+  - name: fetch-source
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: shared-data
+    params:
+    - name: url
+      value: $(params.repo-url)
+
+  # Task extract-version
+  - name: extract-version
+    taskRef:
+      name: extract-version
+    runAfter:
+    - fetch-source
+    workspaces:
+    - name: source
+      workspace: shared-data
+    params:
+    - name: contextPath
+      value: $(params.pathToContext)
+
+  # Task Kaniko
+  - name: build-and-push-image
+    taskRef:
+      name: kaniko
+    runAfter:
+    - fetch-source
+    workspaces:
+    - name: source
+      workspace: shared-data
+    - name: dockerconfig
+      workspace: docker-credentials
+    params:
+    - name: IMAGE
+      value: $(params.imageUrl):$(tasks.extract-version.results.APP_VERSION)
+    - name: DOCKERFILE
+      value: $(params.pathToDockerfile)
+    - name: CONTEXT
+      value: $(params.pathToContext)
+
+  # Task create Telegram Message
+  - name: prepare-message
+    taskRef:
+      name: prepare-telegram-message
+    runAfter:
+      - build-and-push-image
+    params:
+      - name: repo-url
+        value: $(params.repo-url)
+      - name: imageUrl
+        value: $(params.imageUrl)
+      - name: pathToContext
+        value: $(params.pathToContext)
+      - name: imageVersion
+        value: $(tasks.extract-version.results.APP_VERSION)
+
+  # Task send message to Telegram
+  - name: send-mess-to-telegram
+    taskRef:
+      name: send-to-telegram
+    runAfter:
+    - prepare-message
+    params:
+    - name: bot-token-secret
+      value: $(params.botTokenSecret)
+    - name: chat-id
+      value: $(params.chatIdTelegram)
+    - name: message
+      value: $(tasks.prepare-message.results.MESSAGE)

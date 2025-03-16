@@ -1,0 +1,43 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: prepare-telegram-message
+spec:
+  description: >
+    This task constructs a multi-line Telegram message dynamically
+    by combining various inputs such as repository URL, image URL, and version.
+  params:
+  - name: repo-url
+    type: string
+  - name: imageUrl
+    type: string
+  - name: imageVersion
+    type: string
+  - name: pathToContext
+    type: string
+  results:
+  - name: MESSAGE
+  steps:
+  - name: build-message
+    image: alpine:latest
+    script: |
+      #!/bin/sh
+      # Function to generate Harbor link from imageUrl
+      # Expects imageUrl format: host/project/repository
+      get_harbor_link() {
+          local imageUrl="$1"
+          local host=$(echo "$imageUrl" | cut -d'/' -f1)
+          local project=$(echo "$imageUrl" | cut -d'/' -f2)
+          local repo=$(echo "$imageUrl" | cut -d'/' -f3)
+          echo "https://$host/harbor/projects/$project/repositories/$repo/artifacts-tab"
+      }
+      BASE_HARBOR_LINK=$(get_harbor_link "$(params.imageUrl)")
+      # Construct a multi-line message
+      MESSAGE="Build $(params.pathToContext) completed successfully!\n"
+      MESSAGE="${MESSAGE} - Repository: $(params.repo-url)\n"
+      MESSAGE="${MESSAGE} - Built Image: $(params.imageUrl):$(params.imageVersion)\n"
+      MESSAGE="${MESSAGE} - Harbor Link: $BASE_HARBOR_LINK"
+      echo "$MESSAGE"
+      # Write the constructed message to Tekton result
+      echo -n "$MESSAGE" > $(results.MESSAGE.path)
