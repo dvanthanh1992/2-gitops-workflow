@@ -2,99 +2,64 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionTask
 metadata:
-  name: promote-backend
+  name: "promote-${K8S_BE_NAME}"
   namespace: "${K8S_PROJECT_NAME}"
 spec:
   vars:
   - name: chartURL
     value: "${GH_CHART_URL}"
 
-  - name: opsFolder
-    value: ./ops-repo
-
   - name: chartFolder
     value: ./chart-repo
 
   - name: sourceImage
-    value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/backend-app"
+    value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_BE_NAME}"
 
   - name: sourceBranch
     value: main
 
-  - name: targetBranch
+  - name: privateRepoBE
+    value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_BE_NAME}"
 
-  # - name: STAGE_PATH
-  #   value: >-
-  #     ${{ 
-  #       ctx.stage == "dev-be"       ? "cluster/cluster-01/dev" : 
-  #       ctx.stage == "staging-be"   ? "cluster/cluster-01/staging" : 
-  #       ctx.stage == "prod-hcm-be"  ? "cluster/cluster-02/prod-hcm" : 
-  #       ctx.stage == "prod-hni-be"  ? "cluster/cluster-02/prod-hni" : 
-  #       "unknown-stage" 
-  #     }}
-
-  # - name: CHART_VALUES_PATH
-  #   value: >-
-  #     ${{ 
-  #       ctx.stage == "dev-be"       ? "values-dev.yml" : 
-  #       ctx.stage == "staging-be"   ? "values-staging.yml" : 
-  #       ctx.stage == "prod-hcm-be"  ? "values-prod-hcm.yml" : 
-  #       ctx.stage == "prod-hni-be"  ? "values-prod-hni.yml" :
-  #       "unknown-stage" 
-  #     }}
+  - name: CHART_VALUES_PATH
+    value: >-
+      ${{
+        // Compare ctx.stage with a dynamically constructed string
+        ctx.stage == "dev-cluster-01-${K8S_BE_NAME}"       ? "dev"      : 
+        ctx.stage == "staging-cluster-01-${K8S_BE_NAME}"   ? "staging"  : 
+        ctx.stage == "prod-hcm-cluster-02-${K8S_BE_NAME}"  ? "prod-hcm" : 
+        ctx.stage == "prod-hni-cluster-02-${K8S_BE_NAME}"  ? "prod-hni" : 
+        "unknown-stage"
+      }}
 
   steps:
-  # - uses: git-clone
-  #   config:
-  #     repoURL: "${GH_DEV_URL}"
-  #     checkout:
-  #     - branch: main
-  #       path: ${{ vars.opsFolder }}
-
   - uses: git-clone
-    as: clone-ops-repo
+    as: git-clone-chart-repo
     config:
-      repoURL: ${{ vars.opsURL }}
+      repoURL: ${{ vars.chartURL }}
       checkout:
       - branch: ${{ vars.sourceBranch }}
-        path: ${{ vars.opsFolder }}
-      - branch: stage/${{ vars.targetBranch }}
-        create: true
-        path: ./dst
-
+        path: ${{ vars.chartFolder }}
 
   - uses: yaml-update
-    as: update-values-git
+    as: update-chart-values-file
     config:
-      path: ${{ vars.opsFolder }}/${{ vars.STAGE_PATH }}/values-backend.yml
+      path: ${{ vars.chartFolder }}/${{ vars.CHART_VALUES_PATH }}/values.yml
       updates:
       - key: image.repository
-        value: "${PRIVATE_REGISTRY_BE}"
+        value: ${{ vars.privateRepoBE }}
+
       - key: image.tag
-        value: ${{ imageFrom("${PRIVATE_REGISTRY_BE}").Tag }}
+        value: ${{ imageFrom("${vars.privateRepoBE}").Tag }}
+        
       - key: image.pullPolicy
         value: IfNotPresent
 
-
-  # Commit and push changes to the Gitops repository
-  - uses: git-commit
-    as: commit-git-repo
-    config:
-      path: ${{ vars.opsFolder }}
-      message: "Update Helm values for ${{ ctx.stage }}"
-
-  - uses: git-push
-    as: push-git-repo
-    config:
-      path: ${{ vars.opsFolder }}
-      targetBranch: main
-
-  # Commit and push changes to the Helm chart repository
   - uses: git-commit
     as: commit-chart-repo
     config:
       path: ${{ vars.chartFolder }}
-      message: "Sync Helm values with backend application repository"
+      message: "Sync Helm values with thanh-backend-chart"
 
   - uses: git-push
     as: push-chart-repo
@@ -106,14 +71,7 @@ spec:
     as: update-chart-repo
     config:
       apps:
-      - name: "${K8S_PROJECT_NAME}-${{ ctx.stage }}"
+      - name: "${{ ctx.stage }}"
         sources:
         - repoURL: "${GH_CHART_URL}"
 
-  - uses: argocd-update
-    as: update-git-repo
-    config:
-      apps:
-      - name: "${K8S_PROJECT_NAME}-${{ ctx.stage }}"
-        sources:
-        - repoURL: "${GH_DEV_URL}"

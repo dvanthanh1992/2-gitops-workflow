@@ -7,10 +7,10 @@ metadata:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
   promotionPolicies:
-  - stage: dev-cluster-01-backend
+  - stage: "dev-cluster-01-${K8S_BE_NAME}"
     autoPromotionEnabled: true
   promotionPolicies:
-  - stage: dev-cluster-01-frontend
+  - stage: "dev-cluster-01-${K8S_FE_NAME}"
     autoPromotionEnabled: true
 
 ---
@@ -59,14 +59,14 @@ stringData:
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
-  name: "${K8S_PROJECT_NAME}-backend"
+  name: "${K8S_PROJECT_NAME}-${K8S_BE_NAME}"
   namespace: "${K8S_PROJECT_NAME}"
   annotations:
     kargo.akuity.io/color: cyan
 spec:
   subscriptions:
     - image:
-        repoURL: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/backend-app"
+        repoURL: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_BE_NAME}"
         imageSelectionStrategy: SemVer
         semverConstraint: "*.*.0"
         discoveryLimit: 10
@@ -76,14 +76,14 @@ spec:
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
-  name: "${K8S_PROJECT_NAME}-frontend"
+  name: "${K8S_PROJECT_NAME}-${K8S_FE_NAME}"
   namespace: "${K8S_PROJECT_NAME}"
   annotations:
     kargo.akuity.io/color: sky
 spec:
   subscriptions:       
     - image:
-        repoURL: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/frontend-app"
+        repoURL: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_FE_NAME}"
         imageSelectionStrategy: SemVer
         semverConstraint: "*.*.0"
         discoveryLimit: 10

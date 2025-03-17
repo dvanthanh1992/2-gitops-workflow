@@ -2,7 +2,7 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
-  name: dev-cluster-01-backend
+  name: "dev-cluster-01-${K8S_BE_NAME}"
   namespace: "${K8S_PROJECT_NAME}"
   annotations:
     kargo.akuity.io/color: red
@@ -10,20 +10,20 @@ spec:
   requestedFreight:
   - origin:
       kind: Warehouse
-      name: "${K8S_PROJECT_NAME}-backend"
+      name: "${K8S_PROJECT_NAME}-${K8S_BE_NAME}"
     sources:
       direct: true
   promotionTemplate:
     spec:
       steps:
       - task:
-          name: promote-backend
+          name: "promote-${K8S_BE_NAME}"
 
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
-  name: staging-cluster-01-backend
+  name: "staging-cluster-01-${K8S_BE_NAME}"
   namespace: "${K8S_PROJECT_NAME}"
   annotations:
     kargo.akuity.io/color: amber
@@ -31,21 +31,21 @@ spec:
   requestedFreight:
   - origin:
       kind: Warehouse
-      name: "${K8S_PROJECT_NAME}-backend"
+      name: "${K8S_PROJECT_NAME}-${K8S_BE_NAME}"
     sources:
       stages:
-      - dev-cluster-01-backend
+      - "dev-cluster-01-${K8S_BE_NAME}"
   promotionTemplate:
     spec:
       steps:
       - task:
-          name: promote-backend
+          name: "promote-${K8S_BE_NAME}"
 
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
-  name: prod-hcm-cluster-02-backend
+  name: "prod-hcm-cluster-02-${K8S_BE_NAME}"
   namespace: "${K8S_PROJECT_NAME}"
   annotations:
     kargo.akuity.io/color: yellow
@@ -53,21 +53,21 @@ spec:
   requestedFreight:
   - origin:
       kind: Warehouse
-      name: "${K8S_PROJECT_NAME}-backend"
+      name: "${K8S_PROJECT_NAME}-${K8S_BE_NAME}"
     sources:
       stages:
-      - staging-cluster-01-backend
+      - "staging-cluster-01-${K8S_BE_NAME}"
   promotionTemplate:
     spec:
       steps:
       - task:
-          name: promote-backend
+          name: "promote-${K8S_BE_NAME}"
 
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
-  name: prod-hni-cluster-02-backend
+  name: "prod-hni-cluster-02-${K8S_BE_NAME}"
   namespace: "${K8S_PROJECT_NAME}"
   annotations:
     kargo.akuity.io/color: green
@@ -75,12 +75,12 @@ spec:
   requestedFreight:
   - origin:
       kind: Warehouse
-      name: "${K8S_PROJECT_NAME}-backend"
+      name: "${K8S_PROJECT_NAME}-${K8S_BE_NAME}"
     sources:
       stages:
-      - staging-cluster-01-backend
+      - "staging-cluster-01-${K8S_BE_NAME}"
   promotionTemplate:
     spec:
       steps:
       - task:
-          name: promote-backend
+          name: "promote-${K8S_BE_NAME}"

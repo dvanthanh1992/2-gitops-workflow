@@ -15,45 +15,45 @@ spec:
           # DEV environment
           - name: dev
             cluster: cluster-01
-            appType: backend
+            appType: "${K8S_BE_NAME}"
             server: "${K8S_CLUSTER_MGMT}"
 
           - name: dev
             cluster: cluster-01
-            appType: frontend
+            appType: "${K8S_FE_NAME}"
             server: "${K8S_CLUSTER_MGMT}"
 
           # STAGING environment
           - name: staging
             cluster: cluster-01
-            appType: backend
+            appType: "${K8S_BE_NAME}"
             server: "${K8S_CLUSTER_MGMT}"
 
           - name: staging
             cluster: cluster-01
-            appType: frontend
+            appType: "${K8S_FE_NAME}"
             server: "${K8S_CLUSTER_MGMT}"
 
           # PROD HCM environments
           - name: prod-hcm
             cluster: cluster-02
-            appType: backend
+            appType: "${K8S_BE_NAME}"
             server: "${K8S_CLUSTER_RS}"
 
           - name: prod-hcm
             cluster: cluster-02
-            appType: frontend
+            appType: "${K8S_FE_NAME}"
             server: "${K8S_CLUSTER_RS}"
 
           # PROD HNI environments
           - name: prod-hni
             cluster: cluster-02
-            appType: backend
+            appType: "${K8S_BE_NAME}"
             server: "${K8S_CLUSTER_RS}"
 
           - name: prod-hni
             cluster: cluster-02
-            appType: frontend
+            appType: "${K8S_FE_NAME}"
             server: "${K8S_CLUSTER_RS}"
  
   template:
@@ -67,9 +67,9 @@ spec:
       - repoURL: "${GH_CHART_URL}"
         targetRevision: main
         path: >
-          {{- if eq .appType "frontend" -}}
+          {{- if eq .appType "frontend-application" -}}
           thanh-frontend-chart
-          {{- else if eq .appType "backend" -}}
+          {{- else if eq .appType "backend-application" -}}
           thanh-backend-chart
           {{- end -}}
         helm:
