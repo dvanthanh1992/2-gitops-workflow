@@ -1,0 +1,52 @@
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: multi-app-pipeline
+spec:
+  params:
+    - name: repo-url
+      description: "Git repository URL"
+    - name: application
+      description: "Application path/name"
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: "multi-app-pipeline-$(tt.params.application)-"
+      spec:
+        pipelineRef:
+          name: clone-build-push-kaniko
+        podTemplate:
+          securityContext:
+            fsGroup: 65532
+        workspaces:
+          - name: shared-data
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 2Gi
+          - name: docker-credentials
+            secret:
+              secretName: "${VAULT_KV}-${VAULT_KV_PATH}"
+        params:
+          - name: repo-url
+            value: $(tt.params.repo-url)
+
+          - name: imageUrl
+            value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/$(tt.params.application)"
+
+          - name: pathToDockerfile
+            value: "./$(tt.params.application)/Dockerfile"
+
+          - name: pathToContext
+            value: "$(tt.params.application)"
+
+          - name: botTokenSecret
+            value: "${VAULT_KV}-${VAULT_KV_PATH}"
+
+          - name: chatIdTelegram
+            value: "${TELEGRAM_CHAT_ID}"

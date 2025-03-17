@@ -1,0 +1,74 @@
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: github-trigger-binding-backend
+spec:
+  params:
+    - name: repo-url
+      value: $(body.repository.clone_url)
+    - name: application
+      value: "backend-application"
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-trigger-binding-frontend
+spec:
+  params:
+  - name: repo-url
+    value: $(body.repository.clone_url)
+  - name: application
+    value: "frontend-application"
+
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+ name: multi-app-event-listener
+spec:
+  serviceAccountName: tekton-service-account
+  resources:
+    kubernetesResource:
+      serviceType: LoadBalancer
+  triggers:
+    - name: github-listener-backend-application
+      interceptors:
+      - ref:
+          name: "github"
+          kind: ClusterInterceptor
+          apiVersion: triggers.tekton.dev
+        params:
+        - name: "addChangedFiles"
+          value:
+            enabled: true
+      - ref:
+          name: cel
+        params:
+        - name: "filter"
+          value: 'header.match("X-GitHub-Event", "push") && extensions.changed_files.matches("backend-application/")'
+      bindings:
+        - ref: github-trigger-binding-backend
+      template:
+        ref: multi-app-pipeline
+
+    - name: github-listener-frontend-application
+      interceptors:
+      - ref:
+          name: "github"
+          kind: ClusterInterceptor
+          apiVersion: triggers.tekton.dev
+        params:
+        - name: "addChangedFiles"
+          value:
+            enabled: true
+      - ref:
+          name: cel
+        params:
+        - name: "filter"
+          value: 'header.match("X-GitHub-Event", "push") && extensions.changed_files.matches("frontend-application/")'
+      bindings:
+        - ref: github-trigger-binding-frontend
+      template:
+        ref: multi-app-pipeline
