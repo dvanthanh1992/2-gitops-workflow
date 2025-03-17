@@ -226,6 +226,7 @@ spec:
           -revision="${PARAM_REVISION}" \
           -refspec="${PARAM_REFSPEC}" \
           -path="${CHECKOUT_DIR}" \
+          -sslVerify="${PARAM_SSL_VERIFY}" \
           -submodules="${PARAM_SUBMODULES}" \
           -depth="${PARAM_DEPTH}" \
           -sparseCheckoutDirectories="${PARAM_SPARSE_CHECKOUT_DIRECTORIES}"

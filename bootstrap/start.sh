@@ -43,7 +43,6 @@ tekton_manage(){
         echo "🚀 Running kubectl delete for Tekton resources"
         kubectl delete -f ../system/tekton/tekton-interceptors.yaml
         kubectl delete -f ../system/tekton/tekton-triggers.yaml
-        kubectl delete -f ../system/tekton/tekton-dashboard.yaml
         kubectl delete -f ../system/tekton/tekton-pipelines.yaml
     fi
 }

@@ -42,24 +42,46 @@ delete_goharbor() {
     bash goharbor/private-harbor.sh delete
 }
 
-# Apply all YAML files in the given module (directory) recursively
+# Apply all YAML files in the given module (directory)
+# For the 'tekton' module, exclude the 'tekton/task' folder and apply it separately without envsubst
 apply_module() {
     local module_path=$1
-    echo "🔹 Applying module: ${module_path}"
-    find "$module_path" -type f -name "*.yaml" | while read -r file; do
-        echo "Applying ${file}..."
-        envsubst < "${file}" | kubectl apply -f -
-    done
+    if [ "$module_path" == "tekton" ]; then
+        echo "🔹 Applying module: ${module_path} (excluding task folder)"
+        find "$module_path" -type f -name "*.yaml" ! -path "$module_path/task/*" | while read -r file; do
+            echo "Applying ${file}..."
+            envsubst < "${file}" | kubectl apply -f -
+        done
+        echo "🔹 Applying tekton tasks without envsubst..."
+        kubectl apply -f "$module_path/task"
+    else
+        echo "🔹 Applying module: ${module_path}"
+        find "$module_path" -type f -name "*.yaml" | while read -r file; do
+            echo "Applying ${file}..."
+            envsubst < "${file}" | kubectl apply -f -
+        done
+    fi
 }
 
-# Delete all YAML files in the given module (directory) recursively
+# Delete all YAML files in the given module (directory)
+# For the 'tekton' module, exclude the 'tekton/task' folder and delete it separately without envsubst
 delete_module() {
     local module_path=$1
-    echo "🔹 Deleting module: ${module_path}"
-    find "$module_path" -type f -name "*.yaml" | while read -r file; do
-        echo "Deleting ${file}..."
-        envsubst < "${file}" | kubectl delete -f -
-    done
+    if [ "$module_path" == "tekton" ]; then
+        echo "🔹 Deleting module: ${module_path} (excluding task folder)"
+        find "$module_path" -type f -name "*.yaml" ! -path "$module_path/task/*" | while read -r file; do
+            echo "Deleting ${file}..."
+            envsubst < "${file}" | kubectl delete -f -
+        done
+        echo "🔹 Deleting tekton tasks without envsubst..."
+        kubectl delete -f "$module_path/task"
+    else
+        echo "🔹 Deleting module: ${module_path}"
+        find "$module_path" -type f -name "*.yaml" | while read -r file; do
+            echo "Deleting ${file}..."
+            envsubst < "${file}" | kubectl delete -f -
+        done
+    fi
 }
 
 # Apply modules in the order: goharbor -> tekton -> argocd -> kargo
@@ -68,11 +90,9 @@ apply_all() {
     echo "🔹 Installing Demo Application Project..."
 
     apply_goharbor
-    sleep 5
     apply_module "tekton"
-    sleep 5
     apply_module "argocd"
-    sleep 5
+    sleep 20
     apply_module "kargo"
 
     echo "✅ Installation completed!"
@@ -87,11 +107,6 @@ delete_all() {
     delete_module "kargo"
     delete_module "argocd"
     delete_module "tekton"
-
-    echo "🔹 Deleting all ArgoCD Applications related to ${K8S_PROJECT_NAME}..."
-    kubectl delete applicationset  --all -n argocd --force --grace-period=0
-    kubectl delete applications    --all -n argocd --force --grace-period=0
-    kubectl delete appprojects     --all -n argocd --force --grace-period=0
 
     echo "✅ Deletion completed!"
     echo "-----------------------------------------------"
