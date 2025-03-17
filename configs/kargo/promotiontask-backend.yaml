@@ -25,10 +25,10 @@ spec:
     value: >-
       ${{
         // Compare ctx.stage with a dynamically constructed string
-        ctx.stage == "dev-cluster-01-${K8S_BE_NAME}"       ? "dev"      : 
-        ctx.stage == "staging-cluster-01-${K8S_BE_NAME}"   ? "staging"  : 
-        ctx.stage == "prod-hcm-cluster-02-${K8S_BE_NAME}"  ? "prod-hcm" : 
-        ctx.stage == "prod-hni-cluster-02-${K8S_BE_NAME}"  ? "prod-hni" : 
+        ctx.stage == "dev-cluster-01-${K8S_BE_NAME}"       ? "thanh-backend-chart/dev"      : 
+        ctx.stage == "staging-cluster-01-${K8S_BE_NAME}"   ? "thanh-backend-chart/staging"  : 
+        ctx.stage == "prod-hcm-cluster-02-${K8S_BE_NAME}"  ? "thanh-backend-chart/prod-hcm" : 
+        ctx.stage == "prod-hni-cluster-02-${K8S_BE_NAME}"  ? "thanh-backend-chart/prod-hni" : 
         "unknown-stage"
       }}
 
@@ -50,7 +50,7 @@ spec:
         value: ${{ vars.privateRepoBE }}
 
       - key: image.tag
-        value: ${{ imageFrom("${vars.privateRepoBE}").Tag }}
+        value: ${{ imageFrom(vars.privateRepoBE).Tag }}
         
       - key: image.pullPolicy
         value: IfNotPresent

@@ -9,7 +9,6 @@ spec:
   promotionPolicies:
   - stage: "dev-cluster-01-${K8S_BE_NAME}"
     autoPromotionEnabled: true
-  promotionPolicies:
   - stage: "dev-cluster-01-${K8S_FE_NAME}"
     autoPromotionEnabled: true
 

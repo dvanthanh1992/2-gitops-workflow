@@ -30,11 +30,16 @@ argocd_add_cluster() {
 
 apply_all() {
     echo "-----------------------------------------------"
-    echo "🔹 Installing ArgoCD Application Project..."
+    echo "🔹 Installing Demo Application Project..."
 
-    for file in argocd/*.yaml; do
-        echo "Applying ${file}..."
-        envsubst < "${file}" | kubectl apply -f -
+    for argo_file in argocd/*.yaml; do
+        echo "Applying ${argo_file}..."
+        envsubst < "${argo_file}" | kubectl apply -f -
+    done
+
+    for kargo_file in kargo/*.yaml; do
+        echo "Applying ${kargo_file}..."
+        envsubst < "${kargo_file}" | kubectl apply -f -
     done
 
     echo "✅ Installation completed!"
@@ -42,12 +47,17 @@ apply_all() {
 }
 
 delete_all() {
-    echo "🗑️  Deleting ArgoCD Applications..."
+    echo "🗑️  Deleting Demo Applications Project..."
     echo "-----------------------------------------------"
 
-    for file in argocd/*.yaml; do
-        echo "Deleting ${file}..."
-        envsubst < "${file}" | kubectl delete -f -
+    for kargo_file in kargo/*.yaml; do
+        echo "Applying ${kargo_file}..."
+        envsubst < "${kargo_file}" | kubectl delete -f -
+    done
+
+    for argo_file in argocd/*.yaml; do
+        echo "Deleting ${argo_file}..."
+        envsubst < "${argo_file}" | kubectl delete -f -
     done
 
     echo "✅ Deletion completed!"
