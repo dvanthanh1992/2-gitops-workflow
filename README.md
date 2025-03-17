@@ -2,6 +2,8 @@
 
 This repository provides a full-stack automation solution for deploying and managing a native Kubernetes CI/CD pipeline triggered by GitHub webhooks. The system leverages industry-standard tools such as Hashicorp Terraform & Vault, Helm/Helmfile, Tekton, ArgoCD, Kargo and Harbor to streamline the process from code commit to production deployment.
 
+![Topology](GitOps.svg)
+
 ---
 
 ## Repository Structure
