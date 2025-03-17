@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Load environment variables from local.env file
 load_env() {
     if [ -f "../../local.env" ]; then
         while IFS= read -r line; do
@@ -14,6 +15,7 @@ load_env() {
     fi
 }
 
+# Wait for ArgoCD pods to be ready, login to ArgoCD and add clusters
 argocd_add_cluster() {
     echo "⏳ Waiting for all pods in argocd namespace to be ready..."
     kubectl wait --for=condition=Ready --all pods -n argocd --timeout=300s
@@ -28,44 +30,75 @@ argocd_add_cluster() {
     done
 }
 
+# Execute the goharbor shell script for applying the harbor module
+apply_goharbor() {
+    echo "🔹 Executing goharbor module..."
+    bash goharbor/private-harbor.sh
+}
+
+# Execute the goharbor shell script in delete mode for removing the harbor module
+delete_goharbor() {
+    echo "🔹 Deleting goharbor module..."
+    bash goharbor/private-harbor.sh delete
+}
+
+# Apply all YAML files in the given module (directory) recursively
+apply_module() {
+    local module_path=$1
+    echo "🔹 Applying module: ${module_path}"
+    find "$module_path" -type f -name "*.yaml" | while read -r file; do
+        echo "Applying ${file}..."
+        envsubst < "${file}" | kubectl apply -f -
+    done
+}
+
+# Delete all YAML files in the given module (directory) recursively
+delete_module() {
+    local module_path=$1
+    echo "🔹 Deleting module: ${module_path}"
+    find "$module_path" -type f -name "*.yaml" | while read -r file; do
+        echo "Deleting ${file}..."
+        envsubst < "${file}" | kubectl delete -f -
+    done
+}
+
+# Apply modules in the order: goharbor -> tekton -> argocd -> kargo
 apply_all() {
     echo "-----------------------------------------------"
     echo "🔹 Installing Demo Application Project..."
 
-    for argo_file in argocd/*.yaml; do
-        echo "Applying ${argo_file}..."
-        envsubst < "${argo_file}" | kubectl apply -f -
-    done
-
-    for kargo_file in kargo/*.yaml; do
-        echo "Applying ${kargo_file}..."
-        envsubst < "${kargo_file}" | kubectl apply -f -
-    done
+    apply_goharbor
+    sleep 5
+    apply_module "tekton"
+    sleep 5
+    apply_module "argocd"
+    sleep 5
+    apply_module "kargo"
 
     echo "✅ Installation completed!"
     echo "-----------------------------------------------"
 }
 
+# Delete modules in the reverse order: kargo -> argocd -> tekton -> goharbor
 delete_all() {
     echo "🗑️  Deleting Demo Applications Project..."
     echo "-----------------------------------------------"
 
-    for kargo_file in kargo/*.yaml; do
-        echo "Applying ${kargo_file}..."
-        envsubst < "${kargo_file}" | kubectl delete -f -
-    done
+    delete_module "kargo"
+    delete_module "argocd"
+    delete_module "tekton"
 
-    for argo_file in argocd/*.yaml; do
-        echo "Deleting ${argo_file}..."
-        envsubst < "${argo_file}" | kubectl delete -f -
-    done
+    echo "🔹 Deleting all ArgoCD Applications related to ${K8S_PROJECT_NAME}..."
+    kubectl delete applicationset  --all -n argocd --force --grace-period=0
+    kubectl delete applications    --all -n argocd --force --grace-period=0
+    kubectl delete appprojects     --all -n argocd --force --grace-period=0
 
     echo "✅ Deletion completed!"
     echo "-----------------------------------------------"
 }
 
 usage() {
-    echo "Usage: $0 {apply|delete}"
+    echo "Usage: $0 {sync|delete}"
     exit 1
 }
 
@@ -78,7 +111,7 @@ main() {
     load_env
 
     case "$ACTION" in
-        apply)
+        sync)
             argocd_add_cluster
             load_env
             apply_all

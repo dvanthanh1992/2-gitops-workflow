@@ -13,7 +13,7 @@ spec:
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
       metadata:
-        generateName: "multi-app-pipeline-$(tt.params.application)-"
+        generateName: "$(tt.params.application)-"
       spec:
         pipelineRef:
           name: clone-build-push-kaniko

@@ -33,32 +33,49 @@ helm_manage(){
 }
 
 tekton_manage(){
-    if [ "$1" = "delete" ]; then
-        echo "🚀 Running kubectl delete for Tekton resources"
-        kubectl delete -f ../system/tekton/tekton-pipelines.yaml
-        kubectl delete -f ../system/tekton/tekton-dashboard.yaml
-        kubectl delete -f ../system/tekton/tekton-triggers.yaml
-        kubectl delete -f ../system/tekton/tekton-interceptors.yaml
-    else
+    if [ "$1" = "sync" ]; then
         echo "🚀 Running kubectl apply for Tekton resources"
         kubectl apply -f ../system/tekton/tekton-pipelines.yaml
         kubectl apply -f ../system/tekton/tekton-dashboard.yaml
         kubectl apply -f ../system/tekton/tekton-triggers.yaml
         kubectl apply -f ../system/tekton/tekton-interceptors.yaml
+    else
+        echo "🚀 Running kubectl delete for Tekton resources"
+        kubectl delete -f ../system/tekton/tekton-interceptors.yaml
+        kubectl delete -f ../system/tekton/tekton-triggers.yaml
+        kubectl delete -f ../system/tekton/tekton-dashboard.yaml
+        kubectl delete -f ../system/tekton/tekton-pipelines.yaml
     fi
 }
 
-if [ "$#" -eq 0 ]; then
-    echo "❌ No argument provided. Use 'apply', 'sync', or 'delete'."
+usage() {
+    echo "Usage: $0 {sync|delete}"
     exit 1
-fi
+}
 
-if [ "$1" != "apply" ] && [ "$1" != "sync" ] && [ "$1" != "delete" ]; then
-    echo "❌ Invalid argument. Use 'apply', 'sync', or 'delete'."
-    exit 1
-fi
+main() {
+    if [ "$#" -ne 1 ]; then
+        usage
+    fi
 
-load_env
-check_aws_dns
-helm_manage "$1"
-tekton_manage "$1"
+    ACTION=$1
+    load_env
+
+    case "$ACTION" in
+        sync)
+            check_aws_dns
+            helm_manage "$1"
+            tekton_manage "$1"
+            ;;
+        delete)
+            tekton_manage "$1"
+            helm_manage "$1"
+            ;;
+        *)
+            echo "❌ Invalid action: $ACTION"
+            usage
+            ;;
+    esac
+}
+
+main "$@"

@@ -25,15 +25,17 @@ vault_init() {
     if [[ "$(vault status | grep 'Initialized' | awk '{print $2}')" == "true" ]]; then
         echo "✅ Vault is already initialized. Skipping initialization."
         if [[ -f ../../../$VAULT_TOKEN_FILE ]]; then
-
             export VAULT_UNSEAL_KEY=$(grep "Unseal Key 1:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
             export VAULT_ROOT_TOKEN=$(grep "Initial Root Token:" ../../../$VAULT_TOKEN_FILE | awk '{print $4}')
-
-            export VAULT_UNSEAL_KEY_BASE_64=$(echo -n "$VAULT_UNSEAL_KEY" | base64)
-            export VAULT_ROOT_TOKEN_BASE_64=$(echo -n "$VAULT_ROOT_TOKEN" | base64)
         else
-            echo "⚠️ Token file not found. Please ensure VAULT_TOKEN_FILE exists."
+            echo "⚠️ Token file not found. Attempting to use existing VAULT_ROOT_TOKEN environment variable."
+            if [[ -z "${VAULT_ROOT_TOKEN:-}" ]]; then
+                echo "❌ VAULT_ROOT_TOKEN is not set. Exiting."
+                exit 1
+            fi
         fi
+        export VAULT_UNSEAL_KEY_BASE_64=$(echo -n "$VAULT_UNSEAL_KEY" | base64)
+        export VAULT_ROOT_TOKEN_BASE_64=$(echo -n "$VAULT_ROOT_TOKEN" | base64)
     else
         echo "🔑 Initializing Vault..."
         vault operator init -key-shares=1 -key-threshold=1 | tee ../../../$VAULT_TOKEN_FILE
