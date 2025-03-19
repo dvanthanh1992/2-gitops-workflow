@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# Load environment variables from local.env file
+# Load environment variables from test.env file
 load_env() {
-    if [ -f "../../local.env" ]; then
+    if [ -f "../test.env" ]; then
         while IFS= read -r line; do
             if [[ ! "$line" =~ ^# && "$line" =~ = ]]; then
                 export "$line"
             fi
-        done < "../../local.env"
+        done < "../test.env"
         echo "✅ Loaded environment variables"
         echo "✅ KUBECONFIG=$KUBECONFIG"
     else
-        echo "⚠️  local.env file not found. Skipping environment loading."
+        echo "⚠️  test.env file not found. Skipping environment loading."
     fi
 }
 
@@ -92,7 +92,6 @@ apply_all() {
     apply_goharbor
     apply_module "tekton"
     apply_module "argocd"
-    sleep 20
     apply_module "kargo"
 
     echo "✅ Installation completed!"

@@ -2,25 +2,37 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: github-trigger-binding-backend
+  name: github-trigger-binding-${K8S_BE_NAME}
 spec:
   params:
     - name: repo-url
       value: $(body.repository.clone_url)
     - name: application
-      value: "backend-application"
+      value: ${K8S_BE_NAME}
 
 ---
 apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerBinding
 metadata:
-  name: github-trigger-binding-frontend
+  name: github-trigger-binding-${K8S_FE_NAME}
 spec:
   params:
   - name: repo-url
     value: $(body.repository.clone_url)
   - name: application
-    value: "frontend-application"
+    value: ${K8S_FE_NAME}
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-trigger-binding-${K8S_FUE_NAME}
+spec:
+  params:
+  - name: repo-url
+    value: $(body.repository.clone_url)
+  - name: application
+    value: ${K8S_FUE_NAME}
 
 ---
 apiVersion: triggers.tekton.dev/v1alpha1
@@ -33,7 +45,7 @@ spec:
     kubernetesResource:
       serviceType: LoadBalancer
   triggers:
-    - name: github-listener-backend-application
+    - name: github-listener-${K8S_BE_NAME}
       interceptors:
       - ref:
           name: "github"
@@ -49,11 +61,11 @@ spec:
         - name: "filter"
           value: 'header.match("X-GitHub-Event", "push") && extensions.changed_files.matches("backend-application/")'
       bindings:
-        - ref: github-trigger-binding-backend
+        - ref: "github-trigger-binding-${K8S_BE_NAME}"
       template:
         ref: multi-app-pipeline
 
-    - name: github-listener-frontend-application
+    - name: github-listener-${K8S_FE_NAME}
       interceptors:
       - ref:
           name: "github"
@@ -69,6 +81,26 @@ spec:
         - name: "filter"
           value: 'header.match("X-GitHub-Event", "push") && extensions.changed_files.matches("frontend-application/")'
       bindings:
-        - ref: github-trigger-binding-frontend
+        - ref: github-trigger-binding-${K8S_FE_NAME}
+      template:
+        ref: multi-app-pipeline
+
+    - name: github-listener-${K8S_FUE_NAME}
+      interceptors:
+      - ref:
+          name: "github"
+          kind: ClusterInterceptor
+          apiVersion: triggers.tekton.dev
+        params:
+        - name: "addChangedFiles"
+          value:
+            enabled: true
+      - ref:
+          name: cel
+        params:
+        - name: "filter"
+          value: 'header.match("X-GitHub-Event", "push") && extensions.changed_files.matches("fullend-application/")'
+      bindings:
+        - ref: github-trigger-binding-${K8S_FUE_NAME}
       template:
         ref: multi-app-pipeline

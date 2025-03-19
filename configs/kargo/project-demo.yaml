@@ -7,9 +7,11 @@ metadata:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
   promotionPolicies:
-  - stage: "dev-cluster-01-${K8S_BE_NAME}"
+  - stage: "dev-cluster-rs-01-${K8S_BE_NAME}"
     autoPromotionEnabled: true
-  - stage: "dev-cluster-01-${K8S_FE_NAME}"
+  - stage: "dev-cluster-rs-01-${K8S_FE_NAME}"
+    autoPromotionEnabled: true
+  - stage: "dev-cluster-rs-01-${K8S_FUE_NAME}"
     autoPromotionEnabled: true
 
 ---
@@ -83,6 +85,23 @@ spec:
   subscriptions:       
     - image:
         repoURL: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_FE_NAME}"
+        imageSelectionStrategy: SemVer
+        semverConstraint: "*.*.0"
+        discoveryLimit: 10
+        strictSemvers: true
+
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: "${K8S_PROJECT_NAME}-${K8S_FUE_NAME}"
+  namespace: "${K8S_PROJECT_NAME}"
+  annotations:
+    kargo.akuity.io/color: sky
+spec:
+  subscriptions:       
+    - image:
+        repoURL: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_FUE_NAME}"
         imageSelectionStrategy: SemVer
         semverConstraint: "*.*.0"
         discoveryLimit: 10

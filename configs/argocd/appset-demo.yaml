@@ -14,48 +14,68 @@ spec:
         elements:
           # DEV environment
           - name: dev
-            cluster: cluster-01
+            cluster: cluster-rs-01
             appType: "${K8S_BE_NAME}"
-            server: "${K8S_CLUSTER_MGMT}"
+            server: "${K8S_CLUSTER_RS_01}"
 
           - name: dev
-            cluster: cluster-01
+            cluster: cluster-rs-01
             appType: "${K8S_FE_NAME}"
-            server: "${K8S_CLUSTER_MGMT}"
+            server: "${K8S_CLUSTER_RS_01}"
+
+          - name: dev
+            cluster: cluster-rs-01
+            appType: "${K8S_FUE_NAME}"
+            server: "${K8S_CLUSTER_RS_01}"
 
           # STAGING environment
           - name: staging
-            cluster: cluster-01
+            cluster: cluster-rs-01
             appType: "${K8S_BE_NAME}"
-            server: "${K8S_CLUSTER_MGMT}"
+            server: "${K8S_CLUSTER_RS_01}"
 
           - name: staging
-            cluster: cluster-01
+            cluster: cluster-rs-01
             appType: "${K8S_FE_NAME}"
-            server: "${K8S_CLUSTER_MGMT}"
+            server: "${K8S_CLUSTER_RS_01}"
+
+          - name: staging
+            cluster: cluster-rs-01
+            appType: "${K8S_FUE_NAME}"
+            server: "${K8S_CLUSTER_RS_01}"
 
           # PROD HCM environments
           - name: prod-hcm
-            cluster: cluster-02
+            cluster: cluster-rs-02
             appType: "${K8S_BE_NAME}"
-            server: "${K8S_CLUSTER_RS}"
+            server: "${K8S_CLUSTER_RS_02}"
 
           - name: prod-hcm
-            cluster: cluster-02
+            cluster: cluster-rs-02
             appType: "${K8S_FE_NAME}"
-            server: "${K8S_CLUSTER_RS}"
+            server: "${K8S_CLUSTER_RS_02}"
+
+          - name: prod-hcm
+            cluster: cluster-rs-02
+            appType: "${K8S_FUE_NAME}"
+            server: "${K8S_CLUSTER_RS_02}"
 
           # PROD HNI environments
           - name: prod-hni
-            cluster: cluster-02
+            cluster: cluster-rs-02
             appType: "${K8S_BE_NAME}"
-            server: "${K8S_CLUSTER_RS}"
+            server: "${K8S_CLUSTER_RS_02}"
 
           - name: prod-hni
-            cluster: cluster-02
+            cluster: cluster-rs-02
             appType: "${K8S_FE_NAME}"
-            server: "${K8S_CLUSTER_RS}"
+            server: "${K8S_CLUSTER_RS_02}"
  
+          - name: prod-hni
+            cluster: cluster-rs-02
+            appType: "${K8S_FUE_NAME}"
+            server: "${K8S_CLUSTER_RS_02}"
+
   template:
     metadata:
       name: "{{.name}}-{{.cluster}}-{{.appType}}"
@@ -68,9 +88,11 @@ spec:
         targetRevision: main
         path: >
           {{- if eq .appType "frontend-application" -}}
-          thanh-frontend-chart
-          {{- else if eq .appType "backend-application" -}}
           thanh-backend-chart
+          {{- else if eq .appType "backend-application" -}}
+          thanh-frontend-chart
+          {{- else if eq .appType "fullend-application" -}}
+          thanh-fullend-chart
           {{- end -}}
         helm:
           valueFiles:

@@ -16,7 +16,7 @@ releases:
         value: true
     hooks:
       - events: ["postsync"]
-        showlogs: true
+        showlogs: truea
         command: "/bin/sh"
         args: 
           - "-c"

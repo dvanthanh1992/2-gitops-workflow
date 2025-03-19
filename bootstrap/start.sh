@@ -3,16 +3,16 @@
 set -euo pipefail
 
 load_env() {
-    if [ -f "../../local.env" ]; then
+    if [ -f "../test.env" ]; then
         while IFS= read -r line; do
             if [[ ! "$line" =~ ^# && "$line" =~ = ]]; then
                 export "$line"
             fi
-        done < "../../local.env"
+        done < "../test.env"
         echo "✅ Loaded environment variables"
         echo "✅ KUBECONFIG=$KUBECONFIG"
     else
-        echo "⚠️  local.env file not found. Skipping environment loading."
+        echo "⚠️  test.env file not found. Skipping environment loading."
     fi
 }
 

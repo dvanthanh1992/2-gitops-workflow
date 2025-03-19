@@ -2,7 +2,7 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionTask
 metadata:
-  name: "promote-${K8S_FE_NAME}"
+  name: "promote-${K8S_FUE_NAME}"
   namespace: "${K8S_PROJECT_NAME}"
 spec:
   vars:
@@ -16,22 +16,25 @@ spec:
     value: ./chart-render
 
   - name: sourceImage
-    value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_FE_NAME}"
+    value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_FUE_NAME}"
 
   - name: sourceBranch
     value: main
 
-  - name: privateRepoFE
-    value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_FE_NAME}"
+  - name: stage
+    value: ${{ ctx.stage }}
+
+  - name: privateRepoFUE
+    value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_FUE_NAME}"
 
   - name: CHART_VALUES_PATH
     value: >-
       ${{
         // Compare ctx.stage with a dynamically constructed string
-        ctx.stage == "dev-cluster-rs-01-${K8S_FE_NAME}"       ? "thanh-frontend-chart/dev"      : 
-        ctx.stage == "staging-cluster-rs-01-${K8S_FE_NAME}"   ? "thanh-frontend-chart/staging"  : 
-        ctx.stage == "prod-hcm-cluster-rs-02-${K8S_FE_NAME}"  ? "thanh-frontend-chart/prod-hcm" : 
-        ctx.stage == "prod-hni-cluster-rs-02-${K8S_FE_NAME}"  ? "thanh-frontend-chart/prod-hni" : 
+        ctx.stage == "dev-cluster-rs-01-${K8S_FUE_NAME}"       ? "thanh-fullend-chart/dev"      : 
+        ctx.stage == "staging-cluster-rs-01-${K8S_FUE_NAME}"   ? "thanh-fullend-chart/staging"  : 
+        ctx.stage == "prod-hcm-cluster-rs-02-${K8S_FUE_NAME}"  ? "thanh-fullend-chart/prod-hcm" : 
+        ctx.stage == "prod-hni-cluster-rs-02-${K8S_FUE_NAME}"  ? "thanh-fullend-chart/prod-hni" : 
         "unknown-stage" 
       }}
 
@@ -44,25 +47,29 @@ spec:
       - branch: ${{ vars.sourceBranch }}
         path: ${{ vars.chartFolder }}
 
+      - branch: env/${{ vars.stage }}
+        path: ${{ vars.chartRender }}
+        create: true
+
   - uses: yaml-update
     as: update-chart-values-file
     config:
       path: ${{ vars.chartFolder }}/${{ vars.CHART_VALUES_PATH }}/values.yml
       updates:
-      - key: image.repository
-        value: ${{ vars.privateRepoFE }}
+      - key: fullend.image.repository
+        value: ${{ vars.privateRepoFUE }}
 
-      - key: image.tag
-        value: ${{ imageFrom(vars.privateRepoFE).Tag }}
+      - key: fullend.image.tag
+        value: ${{ imageFrom(vars.privateRepoFUE).Tag }}
         
-      - key: image.pullPolicy
-        value: IfNotPresent
+      - key: fullend.image.pullPolicy
+        value: Always
 
   - uses: git-commit
     as: commit-chart-repo
     config:
       path: ${{ vars.chartFolder }}
-      message: ${{ 'Update Helm values with ' + vars.privateRepoFE + ' version ' + imageFrom(vars.privateRepoFE).Tag }}
+      message: ${{ 'Update Helm values with ' + vars.privateRepoFUE + ' version ' + imageFrom(vars.privateRepoFUE).Tag }}
 
   - uses: git-push
     as: push-chart-repo
@@ -86,8 +93,8 @@ spec:
   - uses: helm-template
     as: helm-render-manifest
     config:
-      path: ${{ vars.chartFolder }}/thanh-frontend-chart
-      releaseName: thanh-frontend-chart
+      path: ${{ vars.chartFolder }}/thanh-fullend-chart
+      releaseName: thanh-fullend-chart
       useReleaseName: false
       valuesFiles:
       - ${{ vars.chartFolder }}/${{ vars.CHART_VALUES_PATH }}/values.yml
@@ -97,7 +104,7 @@ spec:
     as: commit-manifest
     config:
       path: ${{ vars.chartRender }}
-      message: ${{ 'Update ' + vars.CHART_VALUES_PATH + ' with ' + vars.privateRepoFE + ' to version ' + imageFrom(vars.privateRepoFE).Tag }}
+      message: ${{ 'Update ' + vars.CHART_VALUES_PATH + ' with ' + vars.privateRepoFUE + ' to version ' + imageFrom(vars.privateRepoFUE).Tag }}
   
   - uses: git-push
     as: push-manifest-branch

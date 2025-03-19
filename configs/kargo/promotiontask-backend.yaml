@@ -12,6 +12,9 @@ spec:
   - name: chartFolder
     value: ./chart-repo
 
+  - name: chartRender
+    value: ./chart-render
+
   - name: sourceImage
     value: "${HARBOR_DNS}/${K8S_PROJECT_NAME}/${K8S_BE_NAME}"
 
@@ -25,10 +28,10 @@ spec:
     value: >-
       ${{
         // Compare ctx.stage with a dynamically constructed string
-        ctx.stage == "dev-cluster-01-${K8S_BE_NAME}"       ? "thanh-backend-chart/dev"      : 
-        ctx.stage == "staging-cluster-01-${K8S_BE_NAME}"   ? "thanh-backend-chart/staging"  : 
-        ctx.stage == "prod-hcm-cluster-02-${K8S_BE_NAME}"  ? "thanh-backend-chart/prod-hcm" : 
-        ctx.stage == "prod-hni-cluster-02-${K8S_BE_NAME}"  ? "thanh-backend-chart/prod-hni" : 
+        ctx.stage == "dev-cluster-rs-01-${K8S_BE_NAME}"       ? "thanh-backend-chart/dev"      : 
+        ctx.stage == "staging-cluster-rs-01-${K8S_BE_NAME}"   ? "thanh-backend-chart/staging"  : 
+        ctx.stage == "prod-hcm-cluster-rs-02-${K8S_BE_NAME}"  ? "thanh-backend-chart/prod-hcm" : 
+        ctx.stage == "prod-hni-cluster-rs-02-${K8S_BE_NAME}"  ? "thanh-backend-chart/prod-hni" : 
         "unknown-stage"
       }}
 
@@ -59,7 +62,7 @@ spec:
     as: commit-chart-repo
     config:
       path: ${{ vars.chartFolder }}
-      message: "Sync Helm values with thanh-backend-chart"
+      message: ${{ 'Update Helm values with ' + vars.privateRepoBE + ' version ' + imageFrom(vars.privateRepoBE).Tag }}
 
   - uses: git-push
     as: push-chart-repo
@@ -75,3 +78,28 @@ spec:
         sources:
         - repoURL: "${GH_CHART_URL}"
 
+  - uses: git-clear
+    as: clear-branch-build-artifacts
+    config:
+      path: ${{ vars.chartRender }}
+
+  - uses: helm-template
+    as: helm-render-manifest
+    config:
+      path: ${{ vars.chartFolder }}/thanh-backend-chart
+      releaseName: thanh-backend-chart
+      useReleaseName: false
+      valuesFiles:
+      - ${{ vars.chartFolder }}/${{ vars.CHART_VALUES_PATH }}/values.yml
+      outPath: ${{ vars.chartRender }}
+
+  - uses: git-commit
+    as: commit-manifest
+    config:
+      path: ${{ vars.chartRender }}
+      message: ${{ 'Update ' + vars.CHART_VALUES_PATH + ' with ' + vars.privateRepoBE + ' to version ' + imageFrom(vars.privateRepoBE).Tag }}
+  
+  - uses: git-push
+    as: push-manifest-branch
+    config:
+      path: ${{ vars.chartRender }}
