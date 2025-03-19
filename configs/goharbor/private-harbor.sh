@@ -13,25 +13,32 @@ docker_login() {
 }
 
 create_harbor_project() {
-    echo "🔧 Step 2: Creating Harbor project '$K8S_PROJECT_NAME'..."
+    echo "🔧 Step 2: Checking if project '$K8S_PROJECT_NAME' exists..."
     HARBOR_API_URL="https://$HARBOR_DNS/api/v2.0"
+    
+    response=$(curl -s -u admin:"$HARBOR_ADMIN_PASSWORD" "$HARBOR_API_URL/projects?name=$K8S_PROJECT_NAME")
 
-    if curl -s -u admin:$HARBOR_ADMIN_PASSWORD "$HARBOR_DNS/projects" | grep '"project_id"'; then
-        echo "✅ Project '$K8S_PROJECT_NAME' already exists."
+    if echo "$response" | grep -q '"project_id"'; then
+        echo "✅ Project '$K8S_PROJECT_NAME' already exists. Skipping creation."
     else
-        curl -X POST -u admin:"$HARBOR_ADMIN_PASSWORD" "$HARBOR_API_URL/projects" \
+        echo "🔧 Project '$K8S_PROJECT_NAME' does not exist. Creating now..."
+        create_response=$(curl -s -o /dev/null -w "%{http_code}" -X POST -u admin:"$HARBOR_ADMIN_PASSWORD" "$HARBOR_API_URL/projects" \
             -H "Content-Type: application/json" \
             -d '{
                 "project_name": "'$K8S_PROJECT_NAME'",
                 "metadata": {
-                    "public": "true"
+                    "public": "true",
+                    "severity": "high",
+                    "auto_scan": "true",
+                    "prevent_vul": "true",
+                    "reuse_sys_cve_allowlist": "true"
                 }
-            }'
- 
-        if [ $? -eq 0 ]; then
+            }')
+
+        if [ "$create_response" -eq 201 ]; then
             echo "✅ Project '$K8S_PROJECT_NAME' created successfully!"
         else
-            echo "❌ Failed to create project '$K8S_PROJECT_NAME'." >&2
+            echo "❌ Failed to create project '$K8S_PROJECT_NAME'. HTTP Response: $create_response" >&2
             exit 1
         fi
     fi
