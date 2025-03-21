@@ -8,7 +8,7 @@ VAULT_VERSION="1.19.0"
 HELMFILE_VERSION="0.171.0"
 UBUNTU_VERSION=$(lsb_release -cs)
 
-echo "🔹 Updating package list..."
+echo "🔹 Updating package list..."a
 sudo apt-get update -y
 
 echo "🔹 Installing required packages..."
@@ -63,6 +63,7 @@ curl -fsSL "https://github.com/helmfile/helmfile/releases/download/v0.171.0/helm
     -o /tmp/helmfile.tar.gz && \
     tar -xzf /tmp/helmfile.tar.gz -C /tmp && \
     mv /tmp/helmfile /usr/local/bin/ && chmod +x /usr/local/bin/helmfile
+helm plugin install https://github.com/databus23/helm-diff
 
 # Install ArgoCD CLI
 echo "🔹 Installing ArgoCD CLI..."
